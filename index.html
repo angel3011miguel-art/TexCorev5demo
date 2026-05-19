@@ -590,6 +590,40 @@ td{padding:10px 16px;font-size:13px;}
   .kan-col{min-width:180px;}
 }
 </style>
+
+  html
+<!-- Firebase SDK (módulo CDN v10+) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  // ── TU CONFIGURACIÓN (cópiala de Firebase Console) ──
+  const firebaseConfig = {
+    apiKey: "AIza...",
+    authDomain: "texcore-gestion.firebaseapp.com",
+    projectId: "texcore-gestion",
+    storageBucket: "texcore-gestion.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abcdef"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+  const auth = getAuth(app);
+
+  // ── Exponer globalmente para usar en el JS del sistema ──
+  window.db   = db;
+  window.auth = auth;
+  window.fbFns = {
+    collection, getDocs, addDoc, updateDoc, deleteDoc,
+    doc, onSnapshot, query, orderBy,
+    signInWithEmailAndPassword, signOut, onAuthStateChanged
+  };
+</script>
+  
 </head>
 <body>
 <div id="toast-container"></div>
@@ -1304,26 +1338,7 @@ let actividades = [
 const ACT_COLORS = {adg:'rgba(0,229,160,.1)',adr:'rgba(239,68,68,.1)',adb:'rgba(14,165,233,.1)',ada:'rgba(245,158,11,.1)',adp:'rgba(167,139,250,.1)'};
 
 // ── PEDIDOS ──
-let pedidos = [
-  {id:'TC-0241',cliente:'Confecciones López',tipo:'Empresa',ciudad:'Cúcuta',desc:'150 uds · Uniformes escolares',fase:2,pct:68,fecha:'2026-03-18',valor:2400000,email:'lopez@confecciones.co',
-   prods:[{n:'Uniformes escolares completos',q:'150 uds'},{n:'Tela Algodón 100%',q:'85 metros'},{n:'Hilo y accesorios',q:'Kit x150'}],
-   tl:[{i:'✓',c:'tli-g',t:'Avanzó a fase Confección',d:'Hace 2h 05min'},{i:'✓',c:'tli-g',t:'Corte completado al 100%',d:'Hace 1 día'},{i:'✓',c:'tli-g',t:'Diseño aprobado por cliente',d:'Hace 3 días'},{i:'$',c:'tli-b',t:'Cotización aceptada · $2.400.000 COP',d:'Hace 5 días'},{i:'+',c:'tli-gr',t:'Pedido registrado en sistema',d:'05 Mar 2026'}]},
-  {id:'TC-0238',cliente:'Distribuidora Norte',tipo:'Mayorista',ciudad:'Pamplona',desc:'500 uds · Jeans + Blusas',fase:1,pct:42,fecha:'2026-03-22',valor:5100000,email:'ventas@distrinorte.com',
-   prods:[{n:'Jeans denim 12 oz',q:'300 uds'},{n:'Blusas casuales',q:'200 uds'},{n:'Denim 12 oz',q:'180 metros'}],
-   tl:[{i:'✓',c:'tli-b',t:'En fase de Corte (42% completado)',d:'Hace 1 día'},{i:'✓',c:'tli-g',t:'Diseño finalizado y aprobado',d:'Hace 2 días'},{i:'✓',c:'tli-gr',t:'Materiales verificados en inventario',d:'Hace 3 días'},{i:'+',c:'tli-gr',t:'Pedido registrado en sistema',d:'10 Mar 2026'}]},
-  {id:'TC-0235',cliente:'Boutique Milena',tipo:'Minorista',ciudad:'Cúcuta',desc:'80 uds · Vestidos casuales',fase:3,pct:100,fecha:'2026-03-15',valor:980000,email:'milena@boutique.co',
-   prods:[{n:'Vestidos casuales dama',q:'80 uds'},{n:'Tela Licra+Algodón',q:'48 metros'}],
-   tl:[{i:'✓',c:'tli-g',t:'TERMINADO · Listo para entrega',d:'Hace 12 min'},{i:'✓',c:'tli-g',t:'Control de calidad aprobado (100%)',d:'Hace 3h'},{i:'✓',c:'tli-g',t:'Confección completada al 100%',d:'Hace 6h'},{i:'✓',c:'tli-g',t:'Corte completado',d:'Hace 1 día'},{i:'✓',c:'tli-g',t:'Diseño aprobado',d:'Hace 2 días'},{i:'+',c:'tli-gr',t:'Pedido registrado en sistema',d:'08 Mar 2026'}]},
-  {id:'TC-0233',cliente:'Sport & Style S.A.',tipo:'Empresa',ciudad:'Bogotá',desc:'300 uds · Polo + Pantalón',fase:0,pct:18,fecha:'2026-03-30',valor:8300000,email:'compras@sportstyle.co',
-   prods:[{n:'Camisetas polo',q:'150 uds'},{n:'Pantalones',q:'150 uds'}],
-   tl:[{i:'✓',c:'tli-b',t:'En fase de Diseño (18% completado)',d:'Hace 2 días'},{i:'$',c:'tli-b',t:'Cotización aprobada · $8.300.000 COP',d:'Hace 4 días'},{i:'+',c:'tli-gr',t:'Pedido registrado en sistema',d:'12 Mar 2026'}]},
-  {id:'TC-0230',cliente:'Almacenes Tía Rosa',tipo:'Minorista',ciudad:'Ocaña',desc:'200 uds · Ropa casual',fase:0,pct:8,fecha:'2026-04-04',valor:1700000,email:'',
-   prods:[{n:'Ropa casual dama',q:'200 uds'}],
-   tl:[{i:'+',c:'tli-gr',t:'Pedido registrado en sistema',d:'Ayer'}]},
-  {id:'TC-0237',cliente:'Moda Express',tipo:'Minorista',ciudad:'Cúcuta',desc:'90 uds · Vestidos colección',fase:2,pct:35,fecha:'2026-03-20',valor:1900000,email:'',
-   prods:[{n:'Vestidos colección primavera',q:'90 uds'}],
-   tl:[{i:'✓',c:'tli-a',t:'En fase de Confección (35%)',d:'Hace 2 días'},{i:'✓',c:'tli-g',t:'Corte completado',d:'Hace 4 días'},{i:'+',c:'tli-gr',t:'Pedido registrado',d:'08 Mar 2026'}]},
-];
+
 
 // ── ARCHIVADOS ──
 let archivados = [];
@@ -1380,19 +1395,34 @@ function fillDemo(u,p,r){
   currentRole=r;
   document.getElementById('tab-'+r).click();
 }
-function doLogin(){
-  const u=document.getElementById('login-user').value.trim().toLowerCase();
-  const p=document.getElementById('login-pass').value;
-  let ok=true;
-  if(!u){showFieldErr('login-user','err-user');ok=false;}else clearFieldErr('login-user','err-user');
-  if(!p){showFieldErr('login-pass','err-pass');ok=false;}else clearFieldErr('login-pass','err-pass');
-  if(!ok)return;
-  const usr=USERS[u];
-  if(!usr||usr.pass!==p){
-    document.getElementById('login-error').style.display='block';
-    document.getElementById('login-user').classList.add('error');
-    document.getElementById('login-pass').classList.add('error');
+javascript
+async function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  if (!user || !pass) {
+    toast('Completa usuario y contraseña', 'error');
     return;
+  }
+  try {
+    // Firebase Auth espera un email
+    const email = user.includes('@') ? user : user + '@texcore.co';
+    const cred = await window.fbFns.signInWithEmailAndPassword(window.auth, email, pass);
+    const uid = cred.user.uid;
+
+    // Obtener rol del usuario desde Firestore
+    const { doc, getDoc } = window.fbFns; // (agrega getDoc al import si usas esta forma)
+    // O usar el perfil ya cargado
+    const rolDoc = await getDoc(doc(window.db, 'usuarios', uid));
+    const rol = rolDoc.exists() ? rolDoc.data().rol : 'cliente';
+
+    currentUser = { uid, email: cred.user.email, rol };
+    iniciarApp(rol);
+  } catch(err) {
+    console.error(err);
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('login-error').textContent = '❌ Usuario o contraseña incorrectos.';
+  }
+
   }
   document.getElementById('login-error').style.display='none';
   document.getElementById('login-screen').style.display='none';
@@ -1458,6 +1488,23 @@ function goPage(id,navEl){
   if(id==='dashboard')renderDashboard();
 }
 
+
+  javascript
+// Al iniciar la app, suscribirse a pedidos en tiempo real
+function suscribirPedidos() {
+  const q = window.fbFns.query(
+    window.fbFns.collection(window.db, 'pedidos'),
+    window.fbFns.orderBy('fecha', 'desc')
+  );
+  window.fbFns.onSnapshot(q, (snapshot) => {
+    pedidos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderDashboard();
+    renderCotizaciones();
+    renderKanban();
+    updateKPIs();
+  });
+}
+  
 // ══════════════════════════════════════════
 // CLOCK & DATE
 // ══════════════════════════════════════════
@@ -1932,7 +1979,7 @@ function calcTotal(){
   _cotTotal=Math.round(cant*precio*(1-desc/100));
   document.getElementById('f-total').textContent=_cotTotal>0?fmtCOPShort(_cotTotal):'$ 0';
 }
-function crearCotizacion(){
+async function crearCotizacion(){
   const cliente=document.getElementById('f-cliente').value.trim();
   const tipo=document.getElementById('f-tipo').value;
   const ciudad=document.getElementById('f-ciudad').value.trim();
@@ -1954,23 +2001,31 @@ function crearCotizacion(){
   const desc=Math.min(parseFloat(document.getElementById('f-descuento').value)||0,50);
   const total=Math.round(cantidad*precio*(1-desc/100));
   const estado=document.getElementById('f-estado').value;
-  const nuevoId='COT-'+cotCounter++;
-  const pedId='TC-0'+pedCounter++;
-  cotizaciones.unshift({id:nuevoId,cliente,tipo,ciudad,cantidad,productos,precioUnit:precio,descuento:desc,total,estado,fecha,pedidoId:pedId,email});
-  // Crear pedido automáticamente
+  const cotRef = await window.fbFns.addDoc(
+    window.fbFns.collection(window.db, 'cotizaciones'), {
+    cliente, tipo, ciudad, cantidad, productos,
+    precioUnit: precio, descuento: desc, total,
+    estado, fecha, email,
+    creadoEn: new Date().toISOString()
+  });
+
   const prodsArr=[{n:productos,q:`${cantidad.toLocaleString('es-CO')} uds`}];
   if(telas>0)prodsArr.push({n:'Tela requerida',q:`${telas.toLocaleString('es-CO')} metros`});
-  pedidos.unshift({id:pedId,cliente,tipo,ciudad,desc:`${cantidad.toLocaleString('es-CO')} uds · ${productos}`,fase:0,pct:5,fecha,valor:total,email,
-    prods:prodsArr,
-    tl:[{i:'$',c:'tli-b',t:`Cotización #${nuevoId} generada · ${fmtCOP(total)}`,d:'Justo ahora'},{i:'+',c:'tli-gr',t:'Pedido registrado en sistema',d:'Justo ahora'}]
+
+  await window.fbFns.addDoc(
+    window.fbFns.collection(window.db, 'pedidos'), {
+    cotizacionId: cotRef.id,
+    cliente, tipo, ciudad,
+    desc:`${cantidad.toLocaleString('es-CO')} uds · ${productos}`,
+    fase:0, pct:5, fecha, valor:total, email,
+    prods: prodsArr,
+    tl:[{i:'$',c:'tli-b',t:`Cotización generada · ${fmtCOP(total)}`,d:'Justo ahora'}],
+    creadoEn: new Date().toISOString()
   });
-  addActividad('$','adb',`Cotización <strong>#${nuevoId}</strong> creada · <strong>${cliente}</strong> · ${fmtCOP(total)}`);
-  if(email){
-    toast(`📧 Confirmación de cotización enviada a <strong>${email}</strong>`,'info',5000);
-  }
-  toast(`Cotización #${nuevoId} creada y pedido #${pedId} generado automáticamente 🎉`,'success',5000);
+
+  if(email) toast(`📧 Confirmación enviada a <strong>${email}</strong>`,'info',5000);
+  toast(`Cotización y pedido creados 🎉`,'success',5000);
   closeModal('modal-cot');
-  renderAll();
 }
 function markErr(inp,err){document.getElementById(inp).classList.add('err');document.getElementById(err).style.display='block';}
 
